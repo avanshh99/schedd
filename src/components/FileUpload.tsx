@@ -48,9 +48,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoad, onError }) =
       pos: Number(row.pos || row.position || index),
       days_since_clean: Number(row.days_since_clean || row.cleaning_days || row.clean_days || 10),
       fitness: {
-        RS: row.fitness_RS !== undefined ? Boolean(row.fitness_RS) : true,
-        SIG: row.fitness_SIG !== undefined ? Boolean(row.fitness_SIG) : true,
-        TEL: row.fitness_TEL !== undefined ? Boolean(row.fitness_TEL) : true
+        RS: row.fitness_RS !== undefined ? Boolean(row.fitness_RS) : 
+            row.RS !== undefined ? Boolean(row.RS) : true,
+        SIG: row.fitness_SIG !== undefined ? Boolean(row.fitness_SIG) : 
+             row.SIG !== undefined ? Boolean(row.SIG) : true,
+        TEL: row.fitness_TEL !== undefined ? Boolean(row.fitness_TEL) : 
+             row.TEL !== undefined ? Boolean(row.TEL) : true
       },
       branding_hours: Number(row.branding_hours || row.branding || 8)
     }));
@@ -101,6 +104,26 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoad, onError }) =
       {
         id: 'T05', mileage_total: 250000, since_A: 7000, since_B: 15000, state: 'OK', p_fail: 0.01,
         pos: 4, days_since_clean: 10, fitness: { RS: true, SIG: true, TEL: true }, branding_hours: 7
+      },
+      {
+        id: 'T06', mileage_total: 300000, since_A: 1000, since_B: 5000, state: 'POH', p_fail: 0.06,
+        pos: 5, days_since_clean: 5, fitness: { RS: true, SIG: true, TEL: true }, branding_hours: 9
+      },
+      {
+        id: 'T07', mileage_total: 320000, since_A: 4000, since_B: 16000, state: 'OK', p_fail: 0.02,
+        pos: 6, days_since_clean: 35, fitness: { RS: true, SIG: true, TEL: true }, branding_hours: 8
+      },
+      {
+        id: 'T08', mileage_total: 350000, since_A: 3000, since_B: 8000, state: 'OK', p_fail: 0.01,
+        pos: 7, days_since_clean: 25, fitness: { RS: true, SIG: false, TEL: true }, branding_hours: 11
+      },
+      {
+        id: 'T09', mileage_total: 400000, since_A: 5000, since_B: 10000, state: 'HEAVY_REPAIR', p_fail: 0.07,
+        pos: 8, days_since_clean: 45, fitness: { RS: true, SIG: true, TEL: true }, branding_hours: 5
+      },
+      {
+        id: 'T10', mileage_total: 420000, since_A: 2500, since_B: 12000, state: 'OK', p_fail: 0.015,
+        pos: 9, days_since_clean: 12, fitness: { RS: true, SIG: true, TEL: true }, branding_hours: 10
       }
     ];
     onDataLoad(sampleData);
@@ -150,9 +173,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoad, onError }) =
             <div className="text-left">
               <div className="font-medium mb-1">Expected CSV columns:</div>
               <div className="space-y-0.5">
-                <div>• id, mileage_total, since_A, since_B</div>
-                <div>• state, p_fail, pos, days_since_clean</div>
-                <div>• fitness_RS, fitness_SIG, fitness_TEL, branding_hours</div>
+                <div>• <strong>Required:</strong> id, mileage_total, since_A, since_B</div>
+                <div>• <strong>Optional:</strong> state, p_fail, pos, days_since_clean</div>
+                <div>• <strong>Fitness:</strong> RS, SIG, TEL (or fitness_RS, fitness_SIG, fitness_TEL)</div>
+                <div>• <strong>Other:</strong> branding_hours</div>
               </div>
             </div>
           </div>

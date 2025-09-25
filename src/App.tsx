@@ -33,6 +33,17 @@ interface SchedulingConfig {
   NUM_STABLING_SLOTS: number;
   REQUIRED_IN_SERVICE: number;
   MIN_RESERVE: number;
+  // weights
+  W_SHUNT: number;
+  W_MILEAGE: number;
+  W_EXPECTED_FAILURE: number;
+  W_OVER_IBL: number;
+  W_OVER_WORKSHOP: number;
+  W_SHORT_IN_SERVICE: number;
+  W_CLEANING_MISS: number;
+  W_BRANDING: number;
+  UNSCHEDULED_WITHDRAWAL_COST: number;
+  shunt_cost_by_pos: { [key: number]: number };
 }
 
 function App() {
@@ -41,6 +52,16 @@ function App() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'edit' | 'config' | 'results'>('upload');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
+  // Generate random shunt costs for positions (matching Python logic)
+  const generateShuntCosts = (numTrains: number) => {
+    const costs: { [key: number]: number } = {};
+    const possibleCosts = [120, 180, 240, 300, 420, 600, 900];
+    for (let i = 0; i < numTrains; i++) {
+      costs[i] = possibleCosts[Math.floor(Math.random() * possibleCosts.length)];
+    }
+    return costs;
+  };
+
   const [config, setConfig] = useState<SchedulingConfig>({
     A_THRESHOLD_KM: 5000,
     B_THRESHOLD_KM: 15000,
@@ -51,6 +72,17 @@ function App() {
     NUM_STABLING_SLOTS: 17,
     REQUIRED_IN_SERVICE: 10,
     MIN_RESERVE: 2,
+    // Weight parameters from Python code
+    W_SHUNT: 1,
+    W_MILEAGE: 0.0001,
+    W_EXPECTED_FAILURE: 0.00001,
+    W_OVER_IBL: 200000,
+    W_OVER_WORKSHOP: 250000,
+    W_SHORT_IN_SERVICE: 500000,
+    W_CLEANING_MISS: 20000,
+    W_BRANDING: -1000, // negative because we want to maximize branding exposure
+    UNSCHEDULED_WITHDRAWAL_COST: 100000,
+    shunt_cost_by_pos: generateShuntCosts(25),
   });
 
   const handleDataLoad = (data: Train[]) => {

@@ -25,6 +25,17 @@ interface SchedulingConfig {
   NUM_STABLING_SLOTS: number;
   REQUIRED_IN_SERVICE: number;
   MIN_RESERVE: number;
+  // weights
+  W_SHUNT: number;
+  W_MILEAGE: number;
+  W_EXPECTED_FAILURE: number;
+  W_OVER_IBL: number;
+  W_OVER_WORKSHOP: number;
+  W_SHORT_IN_SERVICE: number;
+  W_CLEANING_MISS: number;
+  W_BRANDING: number;
+  UNSCHEDULED_WITHDRAWAL_COST: number;
+  shunt_cost_by_pos: { [key: number]: number };
 }
 
 interface ScheduleResult {
@@ -48,25 +59,20 @@ export const scheduleTrains = (trains: Train[], config: SchedulingConfig): {
     let assignment = '';
     let reason = '';
 
-    // Hard lock: IOH/POH/HEAVY_REPAIR -> WORKSHOP
     if (['IOH', 'POH', 'HEAVY_REPAIR'].includes(train.state)) {
       assignment = 'WORKSHOP';
       reason = `Required maintenance: ${train.state}`;
       workshopCount++;
-    }
-    // Overdue inspections -> IBL (if not in workshop)
-    else if (train.since_A >= config.A_THRESHOLD_KM || train.since_B >= config.B_THRESHOLD_KM) {
+    } else if (train.since_A >= config.A_THRESHOLD_KM || train.since_B >= config.B_THRESHOLD_KM) {
       assignment = 'IBL';
       reason = `Overdue inspection - A: ${train.since_A}km, B: ${train.since_B}km`;
       iblCount++;
-    }
-    // Fitness issues -> cannot be in service
-    else if (!train.fitness.RS || !train.fitness.SIG || !train.fitness.TEL) {
+    } else if (!train.fitness.RS || !train.fitness.SIG || !train.fitness.TEL) {
       const issues = [];
       if (!train.fitness.RS) issues.push('RS');
       if (!train.fitness.SIG) issues.push('SIG');
       if (!train.fitness.TEL) issues.push('TEL');
-      
+
       if (workshopCount < config.NUM_WORKSHOP_BAYS) {
         assignment = 'WORKSHOP';
         reason = `Fitness certificate issues: ${issues.join(', ')}`;
@@ -77,71 +83,71 @@ export const scheduleTrains = (trains: Train[], config: SchedulingConfig): {
         iblCount++;
       } else {
         assignment = 'STANDBY';
-        reason = `Fitness certificate issues: ${issues.join(', ')} - All bays full`;
+        reason = `Fitness issues but no bays available`;
       }
     }
 
     if (assignment) {
-      results.push({
-        id: train.id,
-        assignment,
-        reason,
-        train
-      });
+      results.push({ id: train.id, assignment, reason, train });
     }
   });
 
-  // Step 2: Calculate scores for eligible trains (not assigned to workshop/IBL)
+  // Step 2: Score eligible trains with CP-SAT-inspired objective
   const eligibleTrains = trains
     .filter(train => !results.some(r => r.id === train.id))
     .map(train => {
-      const meanMileage = trains.reduce((sum, t) => sum + t.mileage_total, 0) / trains.length;
-      const mileageDeviation = Math.abs(train.mileage_total - meanMileage);
-      
-      // Score calculation (higher is better for in-service)
-      let score = 0;
-      score += train.branding_hours * 10; // Branding value
-      score -= train.p_fail * 10000; // Reliability penalty
-      score -= mileageDeviation / 1000; // Mileage balancing
-      score -= train.days_since_clean > 30 ? 100 : 0; // Cleaning penalty
-      
-      return {
-        train,
-        score,
-        id: train.id
-      };
-    })
-    .sort((a, b) => b.score - a.score); // Sort by score descending
+      const meanMileage = trains.reduce((s, t) => s + t.mileage_total, 0) / trains.length;
 
-  // Step 3: Assign in-service trains
+      // penalties & rewards
+      const shuntCost = config.shunt_cost_by_pos[train.pos] || 300;
+      const mileageVar = Math.pow(train.mileage_total - meanMileage, 2);
+      const expectedFailure = train.p_fail * config.UNSCHEDULED_WITHDRAWAL_COST;
+      const cleaningPenalty = train.days_since_clean >= 30 ? config.W_CLEANING_MISS : 0;
+      const brandingReward = train.branding_hours * config.W_BRANDING;
+
+      // Objective: lower cost is better (convert to score by negating)
+      const cost =
+        config.W_SHUNT * shuntCost +
+        config.W_MILEAGE * mileageVar +
+        config.W_EXPECTED_FAILURE * expectedFailure +
+        cleaningPenalty -
+        brandingReward;
+
+      const score = -cost; // higher score = better candidate
+
+      return { train, score, id: train.id };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  // Step 3: Assign in-service up to REQUIRED_IN_SERVICE
   let inServiceCount = 0;
   const requiredInService = Math.min(config.REQUIRED_IN_SERVICE, eligibleTrains.length);
 
-  for (let i = 0; i < requiredInService && i < eligibleTrains.length; i++) {
+  for (let i = 0; i < requiredInService; i++) {
     const item = eligibleTrains[i];
     results.push({
       id: item.id,
       assignment: 'IN_SERVICE',
       reason: `Selected for service - Score: ${item.score.toFixed(1)}`,
       score: item.score,
-      train: item.train
+      train: item.train,
     });
     inServiceCount++;
   }
 
-  // Step 4: Assign remaining eligible trains to standby
+  // Step 4: Remaining → STANDBY
   for (let i = requiredInService; i < eligibleTrains.length; i++) {
     const item = eligibleTrains[i];
     results.push({
       id: item.id,
       assignment: 'STANDBY',
-      reason: `Standby reserve - Score: ${item.score.toFixed(1)}`,
+      reason: `Reserve candidate - Score: ${item.score.toFixed(1)}`,
       score: item.score,
-      train: item.train
+      train: item.train,
     });
   }
 
-  // Count final assignments
+  // Step 5: Summary
   const summary = {
     inService: results.filter(r => r.assignment === 'IN_SERVICE').length,
     standby: results.filter(r => r.assignment === 'STANDBY').length,
@@ -149,9 +155,9 @@ export const scheduleTrains = (trains: Train[], config: SchedulingConfig): {
     workshop: results.filter(r => r.assignment === 'WORKSHOP').length,
   };
 
-  // Sort results by assignment priority and then by score/id
+  // Sorting: IN_SERVICE > STANDBY > IBL > WORKSHOP
   results.sort((a, b) => {
-    const priority = { 'IN_SERVICE': 0, 'STANDBY': 1, 'IBL': 2, 'WORKSHOP': 3 };
+    const priority = { IN_SERVICE: 0, STANDBY: 1, IBL: 2, WORKSHOP: 3 };
     if (a.assignment !== b.assignment) {
       return priority[a.assignment as keyof typeof priority] - priority[b.assignment as keyof typeof priority];
     }
