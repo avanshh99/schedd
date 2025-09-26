@@ -124,7 +124,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoad, onError }) =
       {
         id: 'T10', mileage_total: 420000, since_A: 2500, since_B: 12000, state: 'OK', p_fail: 0.015,
         pos: 9, days_since_clean: 12, fitness: { RS: true, SIG: true, TEL: true }, branding_hours: 10
-      }
+      },
+      // Additional trains T11-T25 to match the Python dataset
+      ...Array.from({ length: 15 }, (_, i) => {
+        const trainNum = i + 11;
+        return {
+          id: `T${trainNum.toString().padStart(2, '0')}`,
+          mileage_total: 100000 + (trainNum - 1) * 15000,
+          since_A: 1000 + (trainNum - 1) * 200,
+          since_B: 8000 + (trainNum - 1) * 100,
+          state: 'OK',
+          p_fail: 0.01 + ((trainNum - 1) % 5) * 0.005,
+          pos: trainNum - 1,
+          days_since_clean: ((trainNum - 1) * 3) % 40,
+          fitness: { RS: true, SIG: true, TEL: true },
+          branding_hours: 6 + ((trainNum - 1) % 5)
+        };
+      })
     ];
     onDataLoad(sampleData);
   };

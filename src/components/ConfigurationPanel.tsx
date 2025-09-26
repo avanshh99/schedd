@@ -11,6 +11,7 @@ interface SchedulingConfig {
   NUM_STABLING_SLOTS: number;
   REQUIRED_IN_SERVICE: number;
   MIN_RESERVE: number;
+  CANDIDATE_POOL_SIZE: number;
   // weights
   W_SHUNT: number;
   W_MILEAGE: number;
@@ -48,6 +49,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     { key: 'NUM_STABLING_SLOTS', label: 'Stabling Slots', description: 'Total number of stabling positions', category: 'operational' },
     { key: 'REQUIRED_IN_SERVICE', label: 'Required In Service', description: 'Minimum trains required in service', category: 'operational' },
     { key: 'MIN_RESERVE', label: 'Minimum Reserve', description: 'Minimum standby trains required', category: 'operational' },
+    { key: 'CANDIDATE_POOL_SIZE', label: 'Candidate Pool Size', description: 'Number of eligible trains considered for optimization', category: 'operational' },
     
     // Weight Parameters
     { key: 'W_SHUNT', label: 'Shunt Weight', description: 'Weight for shunting cost in objective function', category: 'weights' },
@@ -123,13 +125,15 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
 
         {/* Shunt Cost Information */}
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <h4 className="text-sm font-semibold text-blue-900 mb-2">Shunt Cost Configuration</h4>
+          <h4 className="text-sm font-semibold text-blue-900 mb-2">CP-SAT Optimization Information</h4>
           <p className="text-xs text-blue-700 mb-2">
-            Shunt costs are randomly assigned per train position with values: 120, 180, 240, 300, 420, 600, 900
+            The scheduler uses a two-step process: greedy pre-selection followed by CP-SAT-inspired optimization for slot assignments.
           </p>
-          <div className="text-xs text-blue-600">
-            Current costs: {Object.entries(config.shunt_cost_by_pos).slice(0, 10).map(([pos, cost]) => `P${pos}:${cost}`).join(', ')}
-            {Object.keys(config.shunt_cost_by_pos).length > 10 && '...'}
+          <div className="text-xs text-blue-600 space-y-1">
+            <div>• Candidate pool size determines how many eligible trains are considered for optimization</div>
+            <div>• Lower mileage trains are preferred for in-service assignments</div>
+            <div>• Slot assignments are optimized to minimize shunting costs</div>
+            <div>• Branding hours and cleaning status influence selection scores</div>
           </div>
         </div>
       </div>

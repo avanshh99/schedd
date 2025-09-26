@@ -33,6 +33,7 @@ interface SchedulingConfig {
   NUM_STABLING_SLOTS: number;
   REQUIRED_IN_SERVICE: number;
   MIN_RESERVE: number;
+  CANDIDATE_POOL_SIZE: number;
   // weights
   W_SHUNT: number;
   W_MILEAGE: number;
@@ -69,9 +70,10 @@ function App() {
     POH_THRESHOLD_KM: 840000,
     NUM_INSPECTION_BAYS: 3,
     NUM_WORKSHOP_BAYS: 2,
-    NUM_STABLING_SLOTS: 17,
+    NUM_STABLING_SLOTS: 25,
     REQUIRED_IN_SERVICE: 10,
     MIN_RESERVE: 2,
+    CANDIDATE_POOL_SIZE: 15,
     // Weight parameters from Python code
     W_SHUNT: 1,
     W_MILEAGE: 0.0001,

@@ -23,6 +23,7 @@ interface ScheduleResult {
   assignment: string;
   reason: string;
   score?: number;
+  slot?: number;
   train: Train;
 }
 
@@ -137,11 +138,11 @@ export const SchedulingResults: React.FC<SchedulingResultsProps> = ({
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignment</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slot</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Since A</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Since B</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P Fail</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mileage</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Clean</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fitness</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branding</th>
@@ -170,6 +171,15 @@ export const SchedulingResults: React.FC<SchedulingResultsProps> = ({
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {result.slot !== undefined ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Slot {result.slot}
+                      </span>
+                    ) : '-'}
+                  </div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{result.train.since_A.toLocaleString()}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
@@ -186,10 +196,7 @@ export const SchedulingResults: React.FC<SchedulingResultsProps> = ({
                   </span>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{result.train.p_fail.toFixed(3)}</div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{result.train.pos}</div>
+                  <div className="text-sm text-gray-900">{result.train.mileage_total.toLocaleString()}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{result.train.days_since_clean}</div>
