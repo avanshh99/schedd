@@ -10,6 +10,7 @@ import {
   Calendar,
   Activity
 } from 'lucide-react';
+import { MapPin } from "lucide-react";
 import { BayAllocator } from '../utils/bayAllocator';
 import { 
   AllocationPlan, 
