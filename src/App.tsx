@@ -5,7 +5,7 @@ import { ConfigurationPanel } from './components/ConfigurationPanel';
 import { SchedulingResults } from './components/SchedulingResults';
 import { BayAllocationDashboard } from './components/BayAllocationDashboard';
 import { scheduleTrains } from './utils/scheduler';
-import { Play, FileSpreadsheet, Settings, BarChart3, MapPin } from 'lucide-react';
+import { Play, FileSpreadsheet, Settings, BarChart3 } from 'lucide-react';
 
 interface Train {
   id: string;
