@@ -5,7 +5,7 @@ import {
   CheckCircle, 
   ArrowRight, 
   RefreshCw, 
-  MapPinned ,
+  MapPinned,
   Wrench,
   Calendar,
   Activity
@@ -79,11 +79,23 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
     if (scheduleResults.length > 0) {
       // Generate initial daily forecast
       const dailyPlan = allocator.generateDailyForecast(scheduleResults);
-      setCurrentPlan(dailyPlan);
-      
+
+      // Ensure default arrays exist to prevent undefined errors
+      setCurrentPlan({
+        ...dailyPlan,
+        bays: dailyPlan.bays || [],
+        changes: dailyPlan.changes || [],
+        summary: dailyPlan.summary || {
+          primaryBaysOccupied: 0,
+          standbyBaysOccupied: 0,
+          overflowBaysOccupied: 0,
+          totalShuntingSteps: 0,
+        }
+      });
+
       // Generate mock readiness data
       const readiness = allocator.generateMockReadiness(scheduleResults);
-      setTrainReadiness(readiness);
+      setTrainReadiness(readiness || []);
     }
   }, [scheduleResults]);
 
@@ -95,9 +107,10 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
         // Simulate real-time updates
         const updatedReadiness = trainReadiness.map(r => ({
           ...r,
-          readinessScore: Math.max(0, r.readinessScore + (Math.random() - 0.5) * 10),
+          readinessScore: Math.max(0, (r.readinessScore ?? 0) + (Math.random() - 0.5) * 10),
           isReady: Math.random() > 0.1, // 90% ready rate
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          issues: r.issues || []
         }));
         
         setTrainReadiness(updatedReadiness);
@@ -107,8 +120,15 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
           updatedReadiness,
           scheduleResults
         );
-        
-        setCurrentPlan(updatedPlan);
+
+        // Ensure arrays exist
+        setCurrentPlan({
+          ...updatedPlan,
+          bays: updatedPlan.bays || [],
+          changes: updatedPlan.changes || [],
+          summary: updatedPlan.summary || currentPlan.summary
+        });
+
         setLastUpdate(new Date());
       }, 5000); // Update every 5 seconds
     }
@@ -121,28 +141,38 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
   const generateNewDailyForecast = () => {
     if (scheduleResults.length > 0) {
       const dailyPlan = allocator.generateDailyForecast(scheduleResults);
-      setCurrentPlan(dailyPlan);
+      setCurrentPlan({
+        ...dailyPlan,
+        bays: dailyPlan.bays || [],
+        changes: dailyPlan.changes || [],
+        summary: dailyPlan.summary || {
+          primaryBaysOccupied: 0,
+          standbyBaysOccupied: 0,
+          overflowBaysOccupied: 0,
+          totalShuntingSteps: 0,
+        }
+      });
       setIsRealTimeMode(false);
     }
   };
 
-  const getBayStatusColor = (bay: BayAssignment) => {
-    if (!bay.trainId) return 'bg-gray-100 border-gray-300';
+  const getBayStatusColor = (bay?: BayAssignment) => {
+    if (!bay?.trainId) return 'bg-gray-100 border-gray-300';
     
     const readiness = trainReadiness.find(r => r.id === bay.trainId);
     if (!readiness) return 'bg-blue-100 border-blue-300';
     
-    if (readiness.readinessScore >= 80) return 'bg-green-100 border-green-300';
-    if (readiness.readinessScore >= 60) return 'bg-yellow-100 border-yellow-300';
+    if ((readiness.readinessScore ?? 0) >= 80) return 'bg-green-100 border-green-300';
+    if ((readiness.readinessScore ?? 0) >= 60) return 'bg-yellow-100 border-yellow-300';
     return 'bg-red-100 border-red-300';
   };
 
-  const getBayIcon = (bayType: string) => {
+  const getBayIcon = (bayType?: string) => {
     switch (bayType) {
       case 'PRIMARY': return <MapPinned className="w-4 h-4 text-green-600" />;
       case 'STANDBY': return <Clock className="w-4 h-4 text-blue-600" />;
       case 'OVERFLOW': return <Activity className="w-4 h-4 text-orange-600" />;
-      default: return <MapPinned  className="w-4 h-4 text-gray-600" />;
+      default: return <MapPinned className="w-4 h-4 text-gray-600" />;
     }
   };
 
@@ -172,7 +202,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
               Train Bay Allocation & Forecasting System
             </h2>
             <p className="text-gray-600">
-              Mode: <span className="font-semibold">{currentPlan.mode.replace('_', ' ')}</span> | 
+              Mode: <span className="font-semibold">{currentPlan.mode?.replace('_', ' ')}</span> | 
               Last Updated: {lastUpdate.toLocaleTimeString()}
             </p>
           </div>
@@ -203,10 +233,10 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="flex items-center space-x-2">
-            <MapPinned  className="w-5 h-5 text-green-600" />
+            <MapPinned className="w-5 h-5 text-green-600" />
             <div>
               <div className="text-2xl font-bold text-green-900">
-                {currentPlan.summary.primaryBaysOccupied}
+                {currentPlan.summary?.primaryBaysOccupied ?? 0}
               </div>
               <div className="text-sm text-green-700">Primary Bays</div>
             </div>
@@ -218,7 +248,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
             <Clock className="w-5 h-5 text-blue-600" />
             <div>
               <div className="text-2xl font-bold text-blue-900">
-                {currentPlan.summary.standbyBaysOccupied}
+                {currentPlan.summary?.standbyBaysOccupied ?? 0}
               </div>
               <div className="text-sm text-blue-700">Standby Bays</div>
             </div>
@@ -230,7 +260,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
             <Activity className="w-5 h-5 text-orange-600" />
             <div>
               <div className="text-2xl font-bold text-orange-900">
-                {currentPlan.summary.overflowBaysOccupied}
+                {currentPlan.summary?.overflowBaysOccupied ?? 0}
               </div>
               <div className="text-sm text-orange-700">Overflow Bays</div>
             </div>
@@ -242,7 +272,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
             <ArrowRight className="w-5 h-5 text-purple-600" />
             <div>
               <div className="text-2xl font-bold text-purple-900">
-                {currentPlan.summary.totalShuntingSteps}
+                {currentPlan.summary?.totalShuntingSteps ?? 0}
               </div>
               <div className="text-sm text-purple-700">Shunting Steps</div>
             </div>
@@ -263,17 +293,17 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
               
               {[1, 2, 3].map(bayNum => {
                 const bayId = `${section}${bayNum}`;
-                const bay = currentPlan.bays.find(b => b.bayId === bayId);
+                const bay = currentPlan.bays?.find(b => b.bayId === bayId);
                 const readiness = bay?.trainId ? trainReadiness.find(r => r.id === bay.trainId) : null;
                 
                 return (
                   <div
                     key={bayId}
-                    className={`p-4 rounded-lg border-2 ${getBayStatusColor(bay!)} transition-colors`}
+                    className={`p-4 rounded-lg border-2 ${getBayStatusColor(bay)} transition-colors`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
-                        {getBayIcon(bay?.bayType || '')}
+                        {getBayIcon(bay?.bayType)}
                         <span className="font-semibold">{bayId}</span>
                       </div>
                       {readiness && (
@@ -284,7 +314,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
                             <AlertTriangle className="w-4 h-4 text-red-600" />
                           )}
                           <span className="text-xs font-medium">
-                            {readiness.readinessScore.toFixed(0)}%
+                            {(readiness.readinessScore ?? 0).toFixed(0)}%
                           </span>
                         </div>
                       )}
@@ -299,7 +329,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
                             Departs: {bay.departureTime.toLocaleTimeString()}
                           </div>
                         )}
-                        {readiness && readiness.issues.length > 0 && (
+                        {readiness?.issues?.length > 0 && (
                           <div className="text-xs text-red-600">
                             Issues: {readiness.issues.join(', ')}
                           </div>
@@ -317,7 +347,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
       </div>
 
       {/* Recent Changes */}
-      {currentPlan.changes.length > 0 && (
+      {currentPlan.changes?.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Changes</h3>
           
@@ -339,8 +369,8 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
                       {change.reason}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {change.timestamp.toLocaleTimeString()} | 
-                      Shunting: {change.shuntingSteps} step(s)
+                      {change.timestamp?.toLocaleTimeString()} | 
+                      Shunting: {change.shuntingSteps ?? 0} step(s)
                     </div>
                   </div>
                 </div>
