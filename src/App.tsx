@@ -3,6 +3,7 @@ import { FileUpload } from './components/FileUpload';
 import { TrainDataTable } from './components/TrainDataTable';
 import { ConfigurationPanel } from './components/ConfigurationPanel';
 import { SchedulingResults } from './components/SchedulingResults';
+import { BayAllocationDashboard } from './components/BayAllocationDashboard';
 import { scheduleTrains } from './utils/scheduler';
 import { Play, FileSpreadsheet, Settings, BarChart3 } from 'lucide-react';
 
@@ -50,7 +51,7 @@ interface SchedulingConfig {
 function App() {
   const [trains, setTrains] = useState<Train[]>([]);
   const [scheduleResults, setScheduleResults] = useState<any>(null);
-  const [currentStep, setCurrentStep] = useState<'upload' | 'edit' | 'config' | 'results'>('upload');
+  const [currentStep, setCurrentStep] = useState<'upload' | 'edit' | 'config' | 'results' | 'bays'>('upload');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
   // Generate random shunt costs for positions (matching Python logic)
@@ -123,13 +124,15 @@ function App() {
         return <Settings className="w-5 h-5" />;
       case 'results':
         return <BarChart3 className="w-5 h-5" />;
+      case 'bays':
+        return <MapPin className="w-5 h-5" />;
       default:
         return null;
     }
   };
 
   const getStepStatus = (step: string) => {
-    const steps = ['upload', 'edit', 'config', 'results'];
+    const steps = ['upload', 'edit', 'config', 'results', 'bays'];
     const currentIndex = steps.indexOf(currentStep);
     const stepIndex = steps.indexOf(step);
     
@@ -144,6 +147,7 @@ function App() {
       { id: 'edit', name: 'Review & Edit' },
       { id: 'config', name: 'Configuration' },
       { id: 'results', name: 'Scheduling Results' },
+      { id: 'bays', name: 'Bay Allocation' },
     ];
 
     return (
@@ -163,12 +167,14 @@ function App() {
                     if (step.id === 'edit' && trains.length > 0) setCurrentStep('edit');
                     if (step.id === 'config' && trains.length > 0) setCurrentStep('config');
                     if (step.id === 'results' && scheduleResults) setCurrentStep('results');
+                    if (step.id === 'bays' && scheduleResults) setCurrentStep('bays');
                     if (step.id === 'upload') setCurrentStep('upload');
                   }}
                   disabled={
                     (step.id === 'edit' && trains.length === 0) ||
                     (step.id === 'config' && trains.length === 0) ||
-                    (step.id === 'results' && !scheduleResults)
+                    (step.id === 'results' && !scheduleResults) ||
+                    (step.id === 'bays' && !scheduleResults)
                   }
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     status === 'current'
@@ -280,6 +286,27 @@ function App() {
                 >
                   <Play className="w-4 h-4 mr-2" />
                   Regenerate Schedule
+                </button>
+                <button
+                  onClick={() => setCurrentStep('bays')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Bay Allocation
+                </button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 'bays' && scheduleResults && (
+            <div className="space-y-6">
+              <BayAllocationDashboard results={scheduleResults.results} />
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setCurrentStep('results')}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Back to Results
                 </button>
               </div>
             </div>
