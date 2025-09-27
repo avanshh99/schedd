@@ -5,7 +5,7 @@ import {
   CheckCircle, 
   ArrowRight, 
   RefreshCw, 
-  MapPin,
+  MapPinned ,
   Wrench,
   Calendar,
   Activity
@@ -139,10 +139,10 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
 
   const getBayIcon = (bayType: string) => {
     switch (bayType) {
-      case 'PRIMARY': return <MapPin className="w-4 h-4 text-green-600" />;
+      case 'PRIMARY': return <MapPinned className="w-4 h-4 text-green-600" />;
       case 'STANDBY': return <Clock className="w-4 h-4 text-blue-600" />;
       case 'OVERFLOW': return <Activity className="w-4 h-4 text-orange-600" />;
-      default: return <MapPin className="w-4 h-4 text-gray-600" />;
+      default: return <MapPinned  className="w-4 h-4 text-gray-600" />;
     }
   };
 
@@ -203,7 +203,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="flex items-center space-x-2">
-            <MapPin className="w-5 h-5 text-green-600" />
+            <MapPinned  className="w-5 h-5 text-green-600" />
             <div>
               <div className="text-2xl font-bold text-green-900">
                 {currentPlan.summary.primaryBaysOccupied}
