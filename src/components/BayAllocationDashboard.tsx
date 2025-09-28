@@ -46,11 +46,11 @@ interface ScheduleResult {
 }
 
 interface BayAllocationDashboardProps {
-  scheduleResults: ScheduleResult[];
+  results: ScheduleResult[];
 }
 
 export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
-  scheduleResults
+  results
 }) => {
   const [currentPlan, setCurrentPlan] = useState<AllocationPlan | null>(null);
   const [trainReadiness, setTrainReadiness] = useState<TrainReadiness[]>([]);
@@ -76,9 +76,9 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
   const allocator = new BayAllocator(bayConfig, forecastParams);
 
   useEffect(() => {
-    if (scheduleResults.length > 0) {
+    if (results.length > 0) {
       // Generate initial daily forecast
-      const dailyPlan = allocator.generateDailyForecast(scheduleResults);
+      const dailyPlan = allocator.generateDailyForecast(results);
 
       // Ensure default arrays exist to prevent undefined errors
       setCurrentPlan({
@@ -94,10 +94,9 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
       });
 
       // Generate mock readiness data
-      const readiness = allocator.generateMockReadiness(scheduleResults);
+      const readiness = allocator.generateMockReadiness(results);
       setTrainReadiness(readiness || []);
     }
-  }, [scheduleResults]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -118,7 +117,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
         const updatedPlan = allocator.updateRealTimeAllocation(
           currentPlan,
           updatedReadiness,
-          scheduleResults
+          results
         );
 
         // Ensure arrays exist
@@ -139,8 +138,8 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
   }, [isRealTimeMode, currentPlan, trainReadiness]);
 
   const generateNewDailyForecast = () => {
-    if (scheduleResults.length > 0) {
-      const dailyPlan = allocator.generateDailyForecast(scheduleResults);
+    if (results.length > 0) {
+      const dailyPlan = allocator.generateDailyForecast(results);
       setCurrentPlan({
         ...dailyPlan,
         bays: dailyPlan.bays || [],
