@@ -369,7 +369,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
                       {change.reason}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {change.timestamp?.toLocaleTimeString()} | 
+                     {change.timestamp instanceof Date ? change.timestamp.toLocaleTimeString() : 'Unknown time'} | 
                       Shunting: {change.shuntingSteps ?? 0} step(s)
                     </div>
                   </div>
