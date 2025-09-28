@@ -87,7 +87,7 @@ export class BayAllocator {
   generateDailyForecast(scheduleResults: ScheduleResult[]): AllocationPlan {
     const inServiceTrains = scheduleResults
       .filter(r => r.assignment === 'IN_SERVICE')
-      .sort((a, b) => (a.slot || 0) - (b.slot || 0));
+      .sort((a, b) => (a.slot || 999) - (b.slot || 999));
 
     const standbyTrains = scheduleResults
       .filter(r => r.assignment === 'STANDBY')
@@ -101,7 +101,7 @@ export class BayAllocator {
     this.config.primaryBays.forEach((bayId, index) => {
       if (index < inServiceTrains.length) {
         const train = inServiceTrains[index];
-        const departureTime = new Date(now.getTime() + (6 + index * 0.5) * 60 * 60 * 1000); // 6 AM + 30min intervals
+        const departureTime = new Date(now.getTime() + (6 + index * 0.5) * 60 * 60 * 1000);
         
         bays.push({
           bayId,
@@ -109,7 +109,7 @@ export class BayAllocator {
           bayType: 'PRIMARY',
           assignedAt: now,
           departureTime,
-          reason: `Primary bay assignment for slot ${train.slot} departure`
+          reason: `Primary bay assignment for slot ${train.slot || 'N/A'} departure`
         });
 
         changes.push({
@@ -168,7 +168,7 @@ export class BayAllocator {
     this.config.overflowBays.forEach((bayId, index) => {
       if (index < remainingTrains.length) {
         const train = remainingTrains[index];
-        const departureTime = new Date(now.getTime() + (10 + index * 0.5) * 60 * 60 * 1000); // Later departures
+        const departureTime = new Date(now.getTime() + (10 + index * 0.5) * 60 * 60 * 1000);
         
         bays.push({
           bayId,
@@ -176,7 +176,7 @@ export class BayAllocator {
           bayType: 'OVERFLOW',
           assignedAt: now,
           departureTime,
-          reason: `Overflow assignment for later departure`
+          reason: 'Overflow assignment for later departure'
         });
 
         changes.push({
@@ -234,11 +234,11 @@ export class BayAllocator {
       
       if (!train) continue;
 
-      const readinessScore = readiness ? readiness.readinessScore : 
+      const readinessScore = readiness?.readinessScore ?? 
         this.calculateReadinessScore(train, readiness);
 
       // If train is not ready, find replacement
-      if (readinessScore < this.parameters.readinessThreshold || !readiness?.isReady) {
+      if (readinessScore < this.parameters.readinessThreshold || readiness?.isReady === false) {
         const replacement = this.findBestReplacement(
           bay, 
           updatedBays, 
@@ -313,7 +313,7 @@ export class BayAllocator {
         
         if (!scheduleResult?.train) return null;
 
-        const readinessScore = readiness ? readiness.readinessScore : 
+        const readinessScore = readiness?.readinessScore ?? 
           this.calculateReadinessScore(scheduleResult.train, readiness);
         
         const shuntingSteps = this.calculateShuntingSteps(bay.bayId, targetBay.bayId);
@@ -327,18 +327,21 @@ export class BayAllocator {
           readinessScore,
           shuntingSteps,
           totalScore,
-          isReady: readiness?.isReady ?? true
+          isReady: readiness?.isReady ?? true,
+          reason: `Readiness score: ${readinessScore.toFixed(1)}, Shunting steps: ${shuntingSteps}`
         };
       })
-      .filter(c => c !== null && c.isReady && c.readinessScore >= this.parameters.readinessThreshold)
-      .sort((a, b) => b!.totalScore - a!.totalScore);
+      .filter((c): c is NonNullable<typeof c> => 
+        c !== null && c.isReady && c.readinessScore >= this.parameters.readinessThreshold
+      )
+      .sort((a, b) => b.totalScore - a.totalScore);
 
     if (candidates.length > 0 && candidates[0]) {
       const best = candidates[0];
       return {
         trainId: best.trainId,
         fromBay: best.fromBay,
-        reason: `Train ${targetBay.trainId} not ready: replaced by Train ${best.trainId} from ${best.fromBay} with ${best.shuntingSteps} shunting step(s)`
+        reason: best.reason || `Replaced by Train ${best.trainId} from ${best.fromBay} with ${best.shuntingSteps} shunting step(s)`
       };
     }
 

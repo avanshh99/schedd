@@ -5,7 +5,7 @@ import { ConfigurationPanel } from './components/ConfigurationPanel';
 import { SchedulingResults } from './components/SchedulingResults';
 import { BayAllocationDashboard } from './components/BayAllocationDashboard';
 import { scheduleTrains } from './utils/scheduler';
-import { Play, FileSpreadsheet, Settings, BarChart3, MapPinned  } from 'lucide-react';
+import { Play, FileSpreadsheet, Settings, BarChart3, MapPin } from 'lucide-react';
 
 interface Train {
   id: string;
@@ -125,7 +125,7 @@ function App() {
       case 'results':
         return <BarChart3 className="w-5 h-5" />;
       case 'bays':
-        return <MapPinned className="w-5 h-5" />;
+        return <MapPin className="w-5 h-5" />;
       default:
         return null;
     }
@@ -291,7 +291,7 @@ function App() {
                   onClick={() => setCurrentStep('bays')}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 >
-                  <MapPinned  className="w-4 h-4 mr-2" />
+                  <MapPin className="w-4 h-4 mr-2" />
                   Bay Allocation
                 </button>
               </div>
