@@ -97,6 +97,7 @@ export const BayAllocationDashboard: React.FC<BayAllocationDashboardProps> = ({
       const readiness = allocator.generateMockReadiness(results);
       setTrainReadiness(readiness || []);
     }
+  }, [results]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
